@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Number Speaker Trainer</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #4e73df, #1cc88a);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* ---------- Setup Screen ---------- */
+#setupScreen {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    width: 450px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+textarea {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    resize: none;
+    font-size: 16px;
+}
+
+button {
+    padding: 15px 25px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    margin: 10px;
+}
+
+.primary {
+    background: #4e73df;
+    color: white;
+}
+
+.secondary {
+    background: #e74a3b;
+    color: white;
+}
+
+/* ---------- Training Screen ---------- */
+#trainingScreen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 40px;
+    box-sizing: border-box;
+    color: white;
+}
+
+#currentNumber {
+    font-size: 120px;
+    font-weight: bold;
+    margin-top: 40px;
+    text-align: center;
+}
+
+/* Smaller scrollable list */
+#numbersContainer {
+    width: 300px;
+    height: 200px;
+    overflow-y: auto;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 10px;
+    margin-top: 20px;
+}
+
+.numberBox {
+    font-size: 20px;
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    background: rgba(255,255,255,0.2);
+    opacity: 0.4;
+    transition: 0.3s;
+}
+
+.numberBox.spoken {
+    opacity: 1;
+    font-weight: bold;
+    background: rgba(0,0,0,0.35);
+}
+
+.controls {
+    margin-bottom: 40px;
+}
+
+.controls button {
+    font-size: 24px;
+    padding: 20px 45px;
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setupScreen">
+    <h2>Enter Numbers</h2>
+    <textarea id="numberInput" placeholder="Example: 12, 45, 100"></textarea>
+    <br>
+    <button class="primary" onclick="startTraining()">Submit</button>
+</div>
+
+<!-- TRAINING SCREEN -->
+<div id="trainingScreen">
+    <div id="currentNumber"></div>
+
+    <div id="numbersContainer"></div>
+
+    <div class="controls">
+        <button class="primary" onclick="speakNext()">Next</button>
+        <button class="secondary" onclick="resetApp()">Back</button>
+    </div>
+</div>
+
+<script>
+const synth = window.speechSynthesis;
+
+let numbers = [];
+let currentIndex = 0;
+
+function startTraining() {
+    const input = document.getElementById("numberInput").value;
+
+    numbers = input.split(",")
+        .map(n => n.trim())
+        .filter(n => n !== "" && !isNaN(n));
+
+    if (numbers.length === 0) return;
+
+    currentIndex = 0;
+
+    document.getElementById("setupScreen").style.display = "none";
+    document.getElementById("trainingScreen").style.display = "flex";
+
+    renderNumbers();
+}
+
+function renderNumbers() {
+    const container = document.getElementById("numbersContainer");
+    container.innerHTML = "";
+
+    numbers.forEach((num, index) => {
+        const div = document.createElement("div");
+        div.classList.add("numberBox");
+        div.id = "num-" + index;
+        div.textContent = num;
+        container.appendChild(div);
+    });
+}
+
+function speakNext() {
+    if (currentIndex >= numbers.length) return;
+
+    synth.cancel();
+
+    const number = numbers[currentIndex];
+    document.getElementById("currentNumber").textContent = number;
+
+    const utterance = new SpeechSynthesisUtterance(number);
+    synth.speak(utterance);
+
+    const box = document.getElementById("num-" + currentIndex);
+    box.classList.add("spoken");
+
+    // Auto scroll to keep current number visible
+    box.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    currentIndex++;
+}
+
+function resetApp() {
+    synth.cancel();
+    document.getElementById("trainingScreen").style.display = "none";
+    document.getElementById("setupScreen").style.display = "block";
+    document.getElementById("currentNumber").textContent = "";
+    document.getElementById("numberInput").value = "";
+}
+</script>
+
+</body>
+</html>
