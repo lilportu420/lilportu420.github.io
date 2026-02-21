@@ -75,7 +75,7 @@ button {
     text-align: center;
 }
 
-/* Smaller scrollable list */
+/* Scrollable playlist */
 #numbersContainer {
     width: 300px;
     height: 200px;
@@ -93,13 +93,22 @@ button {
     margin-bottom: 6px;
     background: rgba(255,255,255,0.2);
     opacity: 0.4;
-    transition: 0.3s;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+.numberBox:hover {
+    background: rgba(255,255,255,0.35);
 }
 
 .numberBox.spoken {
     opacity: 1;
     font-weight: bold;
     background: rgba(0,0,0,0.35);
+}
+
+.numberBox.active {
+    outline: 3px solid #ffffff;
 }
 
 .controls {
@@ -166,7 +175,25 @@ function renderNumbers() {
         div.classList.add("numberBox");
         div.id = "num-" + index;
         div.textContent = num;
+
+        div.addEventListener("click", () => jumpTo(index));
+
         container.appendChild(div);
+    });
+}
+
+function updateVisualState() {
+    numbers.forEach((_, index) => {
+        const box = document.getElementById("num-" + index);
+        box.classList.remove("spoken", "active");
+
+        if (index < currentIndex) {
+            box.classList.add("spoken");
+        }
+
+        if (index === currentIndex) {
+            box.classList.add("active");
+        }
     });
 }
 
@@ -181,13 +208,24 @@ function speakNext() {
     const utterance = new SpeechSynthesisUtterance(number);
     synth.speak(utterance);
 
-    const box = document.getElementById("num-" + currentIndex);
-    box.classList.add("spoken");
-
-    // Auto scroll to keep current number visible
-    box.scrollIntoView({ behavior: "smooth", block: "center" });
-
     currentIndex++;
+
+    updateVisualState();
+
+    const activeBox = document.getElementById("num-" + (currentIndex - 1));
+    activeBox.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function jumpTo(index) {
+    synth.cancel();
+
+    currentIndex = index;
+    document.getElementById("currentNumber").textContent = numbers[currentIndex];
+
+    updateVisualState();
+
+    const activeBox = document.getElementById("num-" + currentIndex);
+    activeBox.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function resetApp() {
