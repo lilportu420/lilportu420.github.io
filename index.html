@@ -45,15 +45,8 @@ button {
     margin: 10px;
 }
 
-.primary {
-    background: #4e73df;
-    color: white;
-}
-
-.secondary {
-    background: #e74a3b;
-    color: white;
-}
+.primary { background: #4e73df; color: white; }
+.secondary { background: #e74a3b; color: white; }
 
 /* ---------- Training Screen ---------- */
 #trainingScreen {
@@ -71,8 +64,14 @@ button {
 #currentNumber {
     font-size: 120px;
     font-weight: bold;
-    margin-top: 40px;
+    margin-top: 20px;
     text-align: center;
+}
+
+#stepCounter {
+    font-size: 22px;
+    margin-top: 10px;
+    opacity: 0.9;
 }
 
 /* Scrollable playlist */
@@ -111,13 +110,32 @@ button {
     outline: 3px solid #ffffff;
 }
 
+/* Controls */
 .controls {
-    margin-bottom: 40px;
+    margin-bottom: 20px;
 }
 
 .controls button {
     font-size: 24px;
     padding: 20px 45px;
+}
+
+.gotoContainer {
+    margin-bottom: 20px;
+}
+
+.gotoContainer input {
+    padding: 10px;
+    width: 80px;
+    border-radius: 8px;
+    border: none;
+    text-align: center;
+    font-size: 18px;
+}
+
+.gotoContainer button {
+    font-size: 18px;
+    padding: 10px 20px;
 }
 </style>
 </head>
@@ -133,9 +151,17 @@ button {
 
 <!-- TRAINING SCREEN -->
 <div id="trainingScreen">
-    <div id="currentNumber"></div>
+    <div>
+        <div id="currentNumber"></div>
+        <div id="stepCounter"></div>
+    </div>
 
     <div id="numbersContainer"></div>
+
+    <div class="gotoContainer">
+        <input type="number" id="gotoInput" min="1" placeholder="Step">
+        <button class="primary" onclick="goToStep()">Go To</button>
+    </div>
 
     <div class="controls">
         <button class="primary" onclick="speakNext()">Next</button>
@@ -164,6 +190,7 @@ function startTraining() {
     document.getElementById("trainingScreen").style.display = "flex";
 
     renderNumbers();
+    updateVisualState();
 }
 
 function renderNumbers() {
@@ -175,9 +202,7 @@ function renderNumbers() {
         div.classList.add("numberBox");
         div.id = "num-" + index;
         div.textContent = num;
-
         div.addEventListener("click", () => jumpTo(index));
-
         container.appendChild(div);
     });
 }
@@ -187,14 +212,12 @@ function updateVisualState() {
         const box = document.getElementById("num-" + index);
         box.classList.remove("spoken", "active");
 
-        if (index < currentIndex) {
-            box.classList.add("spoken");
-        }
-
-        if (index === currentIndex) {
-            box.classList.add("active");
-        }
+        if (index < currentIndex) box.classList.add("spoken");
+        if (index === currentIndex) box.classList.add("active");
     });
+
+    document.getElementById("stepCounter").textContent =
+        `Step ${Math.min(currentIndex + 1, numbers.length)} / ${numbers.length}`;
 }
 
 function speakNext() {
@@ -209,23 +232,31 @@ function speakNext() {
     synth.speak(utterance);
 
     currentIndex++;
-
     updateVisualState();
 
-    const activeBox = document.getElementById("num-" + (currentIndex - 1));
-    activeBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    const box = document.getElementById("num-" + (currentIndex - 1));
+    box.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function jumpTo(index) {
+    if (index < 0 || index >= numbers.length) return;
+
     synth.cancel();
-
     currentIndex = index;
-    document.getElementById("currentNumber").textContent = numbers[currentIndex];
 
+    document.getElementById("currentNumber").textContent = numbers[currentIndex];
     updateVisualState();
 
-    const activeBox = document.getElementById("num-" + currentIndex);
-    activeBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    const box = document.getElementById("num-" + currentIndex);
+    box.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function goToStep() {
+    const step = parseInt(document.getElementById("gotoInput").value);
+
+    if (isNaN(step) || step < 1 || step > numbers.length) return;
+
+    jumpTo(step - 1);
 }
 
 function resetApp() {
